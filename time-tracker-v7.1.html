@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TimeTrack – v7.1</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root{
+  --primary:#4361ee;--secondary:#3a0ca3;--accent:#7209b7;--light:#f8f9fa;--dark:#212529;
+  --success:#4cc9f0;--warning:#f9c74f;--danger:#f94144;--gray:#6c757d;--background:#f0f2f5
+}
+*{box-sizing:border-box}body{margin:0;background:var(--background);color:var(--dark);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+header{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:20px;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.12);margin-bottom:18px}
+header h1{margin:0;font-size:1.9rem;display:flex;align-items:center;gap:10px}
+header .sub{opacity:.9;margin-top:6px}
+.alert{background:#fff3cd;color:#856404;border:1px solid #ffeeba;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:960px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.card h3{margin:0 0 12px;color:var(--secondary)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.form-control{width:100%;padding:10px 12px;border:1px solid #e6e6e6;border-radius:10px;font-size:15px}
+.btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
+.btn:hover{filter:brightness(.96);transform:translateY(-1px)}
+.btn-danger{background:var(--danger)}.btn-secondary{background:var(--secondary)}.btn-success{background:#28a745}.btn-ghost{background:#e9ecef;color:#212529}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.78rem;background:#eef2ff;color:#3a0ca3}
+.flex-between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.list{list-style:none;margin:0;padding:0}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;gap:12px}
+.item .meta{color:var(--gray);font-size:.92rem}
+.time-pill{background:var(--light);padding:6px 10px;border-radius:999px;font-weight:600}
+hr.soft{border:0;border-top:1px solid #eee;margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.stat .val{font-size:1.4rem;font-weight:800}
+.hidden{display:none}
+.group{background:#fafafa;border-radius:10px;padding:8px 10px;margin-bottom:10px;border:1px dashed #e8e8e8}
+.group h4{margin:4px 0 6px;font-size:1rem;color:#333}
+.small{font-size:.9rem;color:var(--gray)}
+footer.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+label{font-weight:600;font-size:.92rem}
+/* modal */
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:1000}
+#modal.show{display:flex}
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>TimeTrack v7.1 <i class="fa-solid fa-clock"></i></h1>
+      <div class="sub">Controla tu tiempo, exporta y comparte. Todo desde el navegador.</div>
+    </header>
+
+    <div id="storage-alert" class="alert">
+      <strong>Aviso:</strong> tu navegador está bloqueando el almacenamiento local. Los datos podrían no guardarse.
+    </div>
+
+    <div class="grid">
+      <!-- Columna izquierda: creación y filtros -->
+      <div class="card">
+        <div class="flex-between">
+          <h3>Nueva tarea</h3>
+          <button id="load-demo" class="btn btn-ghost" type="button" title="Insertar datos de ejemplo">Cargar demo</button>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>Proyecto</label>
+            <div class="row">
+              <select id="project-select" class="form-control"></select>
+              <button id="add-project" class="btn" type="button" title="Nuevo proyecto"><i class="fa-solid fa-plus"></i></button>
+            </div>
+          </div>
+          <div style="flex:1">
+            <label>Servicio</label>
+            <select id="service" class="form-control">
+              <option value="">Selecciona…</option>
+              <option>Diseño</option><option>Desarrollo</option><option>Reunión</option>
+              <option>Testing</option><option>Despliegue</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>Fecha</label>
+            <input id="date" type="date" class="form-control"/>
+          </div>
+          <div style="flex:1">
+            <label>Tiempo (h:m:s)</label>
+            <div class="row">
+              <input id="h" type="number" min="0" class="form-control" placeholder="h" value="0" style="flex:1">
+              <input id="m" type="number" min="0" max="59" class="form-control" placeholder="m" value="0" style="flex:1">
+              <input id="s" type="number" min="0" max="59" class="form-control" placeholder="s" value="0" style="flex:1">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label>Descripción</label>
+          <textarea id="desc" rows="3" class="form-control" placeholder="¿Qué hiciste?"></textarea>
+        </div>
+        <footer class="actions">
+          <button id="save" class="btn" type="button"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+          <button id="reset" class="btn btn-secondary" type="button"><i class="fa-solid fa-rotate"></i> Reset</button>
+        </footer>
+        <hr class="soft">
+        <h3>Filtros</h3>
+        <div class="row">
+          <div style="flex:1">
+            <label>Ámbito</label>
+            <select id="scope" class="form-control">
+              <option value="day">Día</option>
+              <option value="week">Semana</option>
+              <option value="month">Mes</option>
+              <option value="range">Intervalo</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label>Fecha base</label>
+            <input id="base-date" type="date" class="form-control"/>
+          </div>
+        </div>
+        <div class="row" id="range-row" style="display:none">
+          <div style="flex:1">
+            <label>Desde</label>
+            <input id="from-date" type="date" class="form-control"/>
+          </div>
+          <div style="flex:1">
+            <label>Hasta</label>
+            <input id="to-date" type="date" class="form-control"/>
+          </div>
+        </div>
+        <div class="row">
+          <div class="switch">
+            <input id="group-toggle" type="checkbox">
+            <label for="group-toggle">Agrupar por proyecto</label>
+          </div>
+        </div>
+        <footer class="actions">
+          <button id="export-csv" class="btn" type="button"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
+          <button id="export-ics" class="btn" type="button"><i class="fa-solid fa-calendar-plus"></i> Exportar iCalendar</button>
+          <button id="backup" class="btn" type="button"><i class="fa-solid fa-download"></i> Backup JSON</button>
+          <label class="btn btn-success" for="restore-file"><i class="fa-solid fa-upload"></i> Restaurar JSON</label>
+          <input id="restore-file" type="file" accept="application/json" class="hidden"/>
+        </footer>
+      </div>
+
+      <!-- Columna derecha: listado y métricas -->
+      <div class="card">
+        <div class="flex-between">
+          <h3>Tareas</h3>
+          <div class="small" id="range-label"></div>
+        </div>
+        <div class="stats" style="margin-bottom:10px">
+          <div class="stat"><div class="val" id="st-count">0</div><div class="lbl">Tareas</div></div>
+          <div class="stat"><div class="val" id="st-hours">0h 0m</div><div class="lbl">Horas totales</div></div>
+          <div class="stat"><div class="val" id="st-avg">0h 0m</div><div class="lbl">Promedio por tarea</div></div>
+        </div>
+        <div id="list"></div>
+      </div>
+    </div>
+
+    <!-- Modal proyecto -->
+    <div id="modal">
+      <div class="card" style="width:min(520px,92vw)">
+        <h3>Nuevo proyecto</h3>
+        <div class="row">
+          <div style="flex:1">
+            <label>Nombre</label>
+            <input id="p-name" class="form-control" placeholder="Ej: Juncal Alimentación">
+          </div>
+          <div style="flex:1">
+            <label>Cliente</label>
+            <input id="p-client" class="form-control" placeholder="Opcional">
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>Presupuesto (€)</label>
+            <input id="p-budget" type="number" min="0" class="form-control" placeholder="Opcional">
+          </div>
+        </div>
+        <footer class="actions">
+          <button id="close-modal" class="btn btn-danger" type="button">Cancelar</button>
+          <button id="save-project" class="btn btn-success" type="button">Guardar</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+// localStorage check
+function storageWorking(){
+  try{
+    const k='__tt__'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true;
+  }catch(e){ return false; }
+}
+
+// Local persistence
+const DB = {
+  get(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch(e){ return fallback } },
+  set(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} },
+  export(){ return JSON.stringify({projects: DB.get('projects',[]), tasks: DB.get('tasks',[])}, null, 2) },
+  import(json, merge=true){
+    try{
+      const data = JSON.parse(json);
+      if(!data || typeof data!=='object') return false;
+      if(merge){
+        const pj = DB.get('projects',[]).concat(data.projects||[]);
+        const ts = DB.get('tasks',[]).concat(data.tasks||[]);
+        DB.set('projects', dedupeById(pj));
+        DB.set('tasks', dedupeById(ts));
+      }else{
+        DB.set('projects', data.projects||[]);
+        DB.set('tasks', data.tasks||[]);
+      }
+      return true;
+    }catch(e){ return false }
+  }
+};
+function dedupeById(arr){ const seen=new Set(); return (arr||[]).filter(x=>{ if(seen.has(x.id)) return false; seen.add(x.id); return true; }); }
+
+// Dates
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function toDate(str){ const [y,m,d]=str.split('-').map(Number); return new Date(y, m-1, d); }
+function fmtHours(totalSeconds){ const h=Math.floor(totalSeconds/3600); const m=Math.floor((totalSeconds%3600)/60); return `${h}h ${m}m`; }
+function within(d, start, end){ return d>=start && d<=end; }
+function isoWeekRange(dateStr){
+  const d = toDate(dateStr);
+  const day = (d.getDay()+6)%7; // 0=Mon
+  const monday = new Date(d); monday.setDate(d.getDate()-day);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  return [monday, sunday];
+}
+function monthRange(dateStr){
+  const d = toDate(dateStr);
+  const start = new Date(d.getFullYear(), d.getMonth(), 1);
+  const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return [start,end];
+}
+function ymd(d){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const da=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${da}`; }
+
+// UI init
+function init(){
+  if(!storageWorking()){
+    $('#storage-alert').style.display='block';
+  }
+  // defaults
+  $('#date').value = todayStr();
+  $('#base-date').value = todayStr();
+  $('#project-select').innerHTML = '<option value="">Selecciona un proyecto…</option>';
+  renderProjects();
+  render();
+
+  // events
+  $('#add-project').onclick = ()=> openModal();
+  $('#close-modal').onclick = closeModal;
+  $('#save-project').onclick = saveProjectFromModal;
+  // enter to save in modal
+  ['#p-name','#p-client','#p-budget'].forEach(sel=>{
+    $(sel).addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); saveProjectFromModal(); } });
+  });
+  // ESC to close
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && $('#modal').classList.contains('show')) closeModal(); });
+
+  $('#save').onclick = saveTask;
+  $('#reset').onclick = ()=>{ $('#service').value=''; $('#desc').value=''; $('#h').value=0; $('#m').value=0; $('#s').value=0; $('#date').value=todayStr(); };
+  $('#scope').onchange = onScopeChange;
+  $('#base-date').onchange = render;
+  $('#from-date').onchange = render;
+  $('#to-date').onchange = render;
+  $('#group-toggle').onchange = render;
+
+  $('#export-csv').onclick = exportCSV;
+  $('#export-ics').onclick = exportICS;
+  $('#backup').onclick = ()=> downloadBlob(DB.export(), 'timetrack-backup.json', 'application/json');
+  $('#restore-file').onchange = (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ const ok=DB.import(reader.result,true); alert(ok?'Restaurado correctamente':'Archivo inválido'); renderProjects(); render(); };
+    reader.readAsText(file);
+    e.target.value='';
+  };
+
+  $('#load-demo').onclick = loadDemo;
+}
+document.addEventListener('DOMContentLoaded', init);
+
+// Modal helpers
+function openModal(){
+  $('#modal').classList.add('show');
+  setTimeout(()=> $('#p-name').focus(), 50);
+}
+function closeModal(){
+  $('#modal').classList.remove('show');
+  $('#p-name').value=''; $('#p-client').value=''; $('#p-budget').value='';
+}
+
+function saveProjectFromModal(){
+  const name=$('#p-name').value.trim();
+  const client=$('#p-client').value.trim();
+  const budget=parseFloat($('#p-budget').value||'0')||0;
+  if(!name){ alert('Introduce un nombre'); $('#p-name').focus(); return;}
+  const projects=DB.get('projects',[]);
+  const id = Date.now();
+  const project={ id, name, client, budget, created_at:new Date().toISOString() };
+  projects.push(project); DB.set('projects', projects);
+  closeModal();
+  renderProjects();
+  // select new project automatically
+  $('#project-select').value = String(id);
+}
+
+function renderProjects(){
+  const projects=DB.get('projects',[]);
+  const sel=$('#project-select'); sel.innerHTML='<option value="">Selecciona un proyecto…</option>';
+  projects.forEach(p=>{
+    const opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.name; sel.appendChild(opt);
+  });
+}
+
+function saveTask(){
+  const pid=$('#project-select').value;
+  const projects=DB.get('projects',[]);
+  const project=projects.find(p=>String(p.id)===String(pid));
+  const service=$('#service').value;
+  const date=$('#date').value;
+  const h=parseInt($('#h').value||'0'); const m=parseInt($('#m').value||'0'); const s=parseInt($('#s').value||'0');
+  const desc=$('#desc').value.trim();
+  if(!pid||!project) return alert('Selecciona un proyecto');
+  if(!service) return alert('Selecciona un servicio');
+  if(!date) return alert('Selecciona una fecha');
+  const totalSec = h*3600 + m*60 + s;
+  if(totalSec<=0) return alert('Introduce un tiempo válido');
+  if(!desc) return alert('Añade una descripción');
+
+  const tasks=DB.get('tasks',[]);
+  tasks.push({
+    id: Date.now(),
+    projectId: project.id,
+    projectName: project.name,
+    service, description: desc,
+    date, seconds: totalSec,
+    hours: +(totalSec/3600).toFixed(4),
+    created_at:new Date().toISOString()
+  });
+  DB.set('tasks', tasks);
+  $('#service').value=''; $('#desc').value=''; $('#h').value=0; $('#m').value=0; $('#s').value=0;
+  render();
+}
+
+function onScopeChange(){
+  const v=$('#scope').value;
+  $('#range-row').style.display = (v==='range') ? 'flex' : 'none';
+  render();
+}
+
+function getFilterRange(){
+  const scope=$('#scope').value;
+  const base=$('#base-date').value || todayStr();
+  let start, end, label='';
+  if(scope==='day'){
+    start=toDate(base); end=toDate(base);
+    label=`Día ${base}`;
+  }else if(scope==='week'){
+    [start,end]=isoWeekRange(base);
+    label=`Semana ${ymd(start)} → ${ymd(end)}`;
+  }else if(scope==='month'){
+    [start,end]=monthRange(base);
+    label=`Mes ${start.toLocaleString('es-ES',{month:'long'})} ${start.getFullYear()}`;
+  }else{
+    const f=$('#from-date').value; const t=$('#to-date').value || $('#from-date').value;
+    if(!f){ start=toDate(base); end=toDate(base); } else { start=toDate(f); end=toDate(t); }
+    label=`Intervalo ${ymd(start)} → ${ymd(end)}`;
+  }
+  start.setHours(0,0,0,0); end.setHours(23,59,59,999);
+  return {start,end,label};
+}
+
+function render(){
+  const {start,end,label}=getFilterRange();
+  $('#range-label').textContent = label;
+  const tasks=DB.get('tasks',[]);
+  const filtered=tasks.filter(t=>{
+    const d=toDate(t.date); d.setHours(12,0,0,0);
+    return within(d,start,end);
+  });
+  const totalSec = filtered.reduce((a,t)=>a+(t.seconds||Math.round((t.hours||0)*3600)),0);
+  $('#st-count').textContent = filtered.length;
+  $('#st-hours').textContent = fmtHours(totalSec);
+  $('#st-avg').textContent = filtered.length? fmtHours(Math.floor(totalSec/filtered.length)) : '0h 0m';
+
+  const group = $('#group-toggle').checked;
+  const host = $('#list'); host.innerHTML='';
+
+  if(!group){
+    const ul=document.createElement('ul'); ul.className='list';
+    if(filtered.length===0){
+      ul.innerHTML = `<li class="item"><div>No hay tareas en el rango seleccionado</div></li>`;
+    }else{
+      filtered.sort((a,b)=> (a.date<b.date)?-1:(a.date>b.date)?1: a.id-b.id);
+      filtered.forEach(t=>{
+        const li=document.createElement('li'); li.className='item';
+        li.innerHTML = `
+          <div>
+            <div><strong>${escapeHTML(t.description)}</strong></div>
+            <div class="meta"><span class="badge">${escapeHTML(t.service)}</span> ${escapeHTML(t.projectName)} — ${t.date}</div>
+          </div>
+          <div class="time-pill">${fmtHours(t.seconds)}</div>
+          <button class="btn btn-danger" data-id="${t.id}" title="Eliminar">Eliminar</button>`;
+        ul.appendChild(li);
+      });
+    }
+    host.appendChild(ul);
+  }else{
+    const byProject = {};
+    filtered.forEach(t=>{
+      byProject[t.projectId] = byProject[t.projectId] || { name: t.projectName, items:[], seconds:0 };
+      byProject[t.projectId].items.push(t);
+      byProject[t.projectId].seconds += t.seconds;
+    });
+    const ids = Object.keys(byProject);
+    if(ids.length===0){
+      host.innerHTML = `<div class="small">No hay tareas en el rango seleccionado</div>`;
+    }else{
+      ids.sort((a,b)=> byProject[a].name.localeCompare(byProject[b].name));
+      ids.forEach(pid=>{
+        const grp = byProject[pid];
+        const wrap=document.createElement('div'); wrap.className='group';
+        wrap.innerHTML = `<h4>${escapeHTML(grp.name)} <span class="small">· ${fmtHours(grp.seconds)} · ${grp.items.length} tareas</span></h4>`;
+        const ul=document.createElement('ul'); ul.className='list';
+        grp.items.sort((a,b)=> a.date.localeCompare(b.date));
+        grp.items.forEach(t=>{
+          const li=document.createElement('li'); li.className='item';
+          li.innerHTML = `
+            <div>
+              <div><strong>${escapeHTML(t.description)}</strong></div>
+              <div class="meta"><span class="badge">${escapeHTML(t.service)}</span> ${t.date}</div>
+            </div>
+            <div class="time-pill">${fmtHours(t.seconds)}</div>
+            <button class="btn btn-danger" data-id="${t.id}" title="Eliminar">Eliminar</button>`;
+          ul.appendChild(li);
+        });
+        wrap.appendChild(ul);
+        host.appendChild(wrap);
+      });
+    }
+  }
+
+  $$('#list .btn.btn-danger').forEach(b=> b.onclick = ()=> deleteTask(b.getAttribute('data-id')) );
+}
+
+function deleteTask(id){
+  if(!confirm('¿Eliminar esta tarea?')) return;
+  const tasks=DB.get('tasks',[]).filter(t=>String(t.id)!==String(id));
+  DB.set('tasks', tasks);
+  render();
+}
+
+// Export CSV
+function exportCSV(){
+  const {start,end,label}=getFilterRange();
+  const tasks=DB.get('tasks',[]).filter(t=>{
+    const d=toDate(t.date); d.setHours(12,0,0,0); return within(d,start,end);
+  });
+  const rows=[['Fecha','Proyecto','Servicio','Descripción','Horas (h)','Minutos (m)','Segundos (s)','Total segundos']];
+  tasks.forEach(t=>{
+    const s=t.seconds||Math.round((t.hours||0)*3600);
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), se=s%60;
+    rows.push([t.date, t.projectName, t.service, t.description.replace(/\n/g,' '), h, m, se, s]);
+  });
+  const csv = rows.map(r=> r.map(x=> csvEscape(x)).join(',')).join('\n');
+  downloadBlob(csv, `timetrack_${label.replaceAll(' ','_')}.csv`, 'text/csv;charset=utf-8');
+}
+function csvEscape(v){
+  const s=String(v??'');
+  if(s.includes('"')||s.includes(',')||s.includes('\n')) return `"${s.replace(/"/g,'""')}"`;
+  return s;
+}
+
+// Export ICS (iCalendar)
+function exportICS(){
+  const {start,end,label}=getFilterRange();
+  const tasks=DB.get('tasks',[]).filter(t=>{
+    const d=toDate(t.date); d.setHours(12,0,0,0); return within(d,start,end);
+  });
+  const lines=[
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TimeTrack v7.1//ricardotero//ES'
+  ];
+  tasks.forEach(t=>{
+    const s=t.seconds||Math.round((t.hours||0)*3600);
+    if(s<=0) return;
+    const dt = t.date.replaceAll('-',''); // YYYYMMDD
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${t.id}@timetrack`);
+    lines.push(`DTSTAMP:${formatICSDateTime(new Date())}`);
+    lines.push(`DTSTART;VALUE=DATE:${dt}`);
+    lines.push(`DURATION:${formatICSDuration(s)}`);
+    lines.push(`SUMMARY:${escapeICS(`${t.projectName} · ${t.service}`)}`);
+    lines.push(`DESCRIPTION:${escapeICS(t.description)}`);
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  const ics=lines.join('\r\n');
+  downloadBlob(ics, `timetrack_${label.replaceAll(' ','_')}.ics`, 'text/calendar;charset=utf-8');
+}
+function pad2(n){ return String(n).padStart(2,'0'); }
+function formatICSDateTime(d){
+  return d.getUTCFullYear()+pad2(d.getUTCMonth()+1)+pad2(d.getUTCDate())+'T'+pad2(d.getUTCHours())+pad2(d.getUTCMinutes())+pad2(d.getUTCSeconds())+'Z';
+}
+function formatICSDuration(sec){
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  let str='P'; if(h||m||s) str+='T'; if(h) str+=h+'H'; if(m) str+=m+'M'; if(s) str+=s+'S'; return str;
+}
+function escapeICS(s){ return String(s??'').replace(/([,;])/g,'\\$1').replace(/\n/g,'\\n'); }
+
+// Demo loader
+function loadDemo(){
+  const projects = DB.get('projects',[]);
+  const hasDemo = projects.some(p=> p.name==='Proyecto Demo');
+  let pid;
+  if(!hasDemo){
+    pid = Date.now();
+    projects.push({ id:pid, name:'Proyecto Demo', client:'Cliente Demo', budget:0, created_at:new Date().toISOString() });
+    DB.set('projects', projects);
+  } else {
+    pid = projects.find(p=>p.name==='Proyecto Demo').id;
+  }
+  const tasks = DB.get('tasks',[]);
+  const base = new Date();
+  for(let i=0;i<3;i++){
+    const d=new Date(base); d.setDate(d.getDate()-i);
+    const seconds = (i+1)*1800;
+    tasks.push({
+      id: Date.now()+i,
+      projectId: pid,
+      projectName: 'Proyecto Demo',
+      service: i%2===0?'Desarrollo':'Reunión',
+      description: `Tarea demo ${i+1}`,
+      date: ymd(d),
+      seconds,
+      hours: +(seconds/3600).toFixed(4),
+      created_at:new Date().toISOString()
+    });
+  }
+  DB.set('tasks', tasks);
+  renderProjects();
+  $('#project-select').value = String(pid);
+  render();
+  alert('Datos de demo cargados ✓');
+}
+
+// Utils
+function downloadBlob(content, filename, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );
+}
+
+</script>
+</body>
+</html>
