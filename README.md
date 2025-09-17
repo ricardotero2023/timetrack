@@ -1,2 +1,3 @@
-# timetrack
-Aplicación para gestión de tareas diarias
+# TimeTrack v7.1 (Static)
+
+Súbelo como `index.html` y activa GitHub Pages desde `main` / root.
