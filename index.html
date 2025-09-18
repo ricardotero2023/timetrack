@@ -81,6 +81,8 @@ label{font-weight:600;font-size:.92rem}
             </select>
           </div>
         </div>
+
+        <!-- FECHA + TIEMPO -->
         <div class="row">
           <div style="flex:1">
             <label>Fecha</label>
@@ -88,31 +90,31 @@ label{font-weight:600;font-size:.92rem}
           </div>
           <div style="flex:1">
             <label>Tiempo</label>
-<select id="time-mode" class="form-control" style="margin-bottom:8px">
-  <option value="manual" selected>Manual (h:m:s)</option>
-  <option value="timer">Cronómetro</option>
-</select>
+            <select id="time-mode" class="form-control" style="margin-bottom:8px">
+              <option value="manual" selected>Manual (h:m:s)</option>
+              <option value="timer">Cronómetro</option>
+            </select>
 
-<!-- Modo manual (igual que antes) -->
-<div id="manual-time-row" class="row">
-  <input id="h" type="number" min="0" class="form-control" placeholder="h" value="0" style="flex:1">
-  <input id="m" type="number" min="0" max="59" class="form-control" placeholder="m" value="0" style="flex:1">
-  <input id="s" type="number" min="0" max="59" class="form-control" placeholder="s" value="0" style="flex:1">
-</div>
+            <!-- Modo manual -->
+            <div id="manual-time-row" class="row">
+              <input id="h" type="number" min="0" class="form-control" placeholder="h" value="0" style="flex:1">
+              <input id="m" type="number" min="0" max="59" class="form-control" placeholder="m" value="0" style="flex:1">
+              <input id="s" type="number" min="0" max="59" class="form-control" placeholder="s" value="0" style="flex:1">
+            </div>
 
-<!-- Modo cronómetro -->
-<div id="timer-controls" class="group" style="display:none; margin-top:8px">
-  <div class="row" style="align-items:center">
-    <button type="button" id="start-timer" class="btn btn-success">Iniciar</button>
-    <button type="button" id="stop-timer"  class="btn btn-danger"  disabled>Detener</button>
-    <div id="timer-display" class="time-pill">0h 0m 0s</div>
-  </div>
-  <div class="small" style="margin-top:6px">Al detener, se rellenan automáticamente h/m/s.</div>
-</div>
-
+            <!-- Modo cronómetro -->
+            <div id="timer-controls" class="group" style="display:none; margin-top:8px">
+              <div class="row" style="align-items:center">
+                <button type="button" id="start-timer" class="btn btn-success">Iniciar</button>
+                <button type="button" id="stop-timer"  class="btn btn-danger"  disabled>Detener</button>
+                <div id="timer-display" class="time-pill">0h 0m 0s</div>
+              </div>
+              <div class="small" style="margin-top:6px">Al detener, se rellenan automáticamente h/m/s.</div>
             </div>
           </div>
         </div>
+        <!-- FIN FECHA + TIEMPO -->
+
         <div>
           <label>Descripción</label>
           <textarea id="desc" rows="3" class="form-control" placeholder="¿Qué hiciste?"></textarea>
@@ -581,9 +583,11 @@ function downloadBlob(content, filename, mime){
 function escapeHTML(str){
   return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) );
 }
-
 </script>
-  // ====== Modo tiempo: manual / cronómetro ======
+
+<!-- BLOQUE DEL CRONÓMETRO (ahora sí dentro de <script>) -->
+<script>
+// ====== Modo tiempo: manual / cronómetro ======
 let timerInterval = null;
 let timerSeconds  = 0;
 
@@ -598,7 +602,6 @@ function setTimeModeUI(mode){
   }else{
     manualRow.style.display = 'flex';
     timerBox.style.display  = 'none';
-    // Por si estaba corriendo
     stopTimer(true);
   }
 }
@@ -611,13 +614,11 @@ function formatHMS(sec){
 }
 
 function startTimer(){
-  if(timerInterval) return; // ya corriendo
+  if(timerInterval) return;
   timerSeconds = 0;
   const disp = document.getElementById('timer-display');
-  const startBtn = document.getElementById('start-timer');
-  const stopBtn  = document.getElementById('stop-timer');
-  if(startBtn) startBtn.disabled = true;
-  if(stopBtn)  stopBtn.disabled  = false;
+  document.getElementById('start-timer').disabled = true;
+  document.getElementById('stop-timer').disabled  = false;
   if(disp) disp.textContent = formatHMS(timerSeconds);
 
   timerInterval = setInterval(()=>{
@@ -651,7 +652,7 @@ function stopTimer(silent=false){
   }
 }
 
-// Hooks de UI
+// Hooks
 document.addEventListener('DOMContentLoaded', ()=>{
   const modeSel = document.getElementById('time-mode');
   if(modeSel){
@@ -662,7 +663,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('start-timer')?.addEventListener('click', startTimer);
   document.getElementById('stop-timer') ?.addEventListener('click', ()=> stopTimer(false));
 
-  // Si guardas con el cronómetro corriendo, lo detenemos y volcamos h/m/s antes de que tu saveTask lea los inputs
+  // Al guardar con cronómetro corriendo, paramos y volcamos h/m/s antes de que saveTask lea
   document.getElementById('save')?.addEventListener('click', ()=>{
     const modeNow = document.getElementById('time-mode')?.value;
     if(modeNow === 'timer' && timerInterval){
@@ -670,13 +671,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   }, { capture: true });
 
-  // Si pulsas Reset, paramos cronómetro y ponemos 0
+  // Reset también para el cronómetro
   document.getElementById('reset')?.addEventListener('click', ()=>{
     stopTimer(true);
     const disp = document.getElementById('timer-display');
     if(disp) disp.textContent = '0h 0m 0s';
   });
 });
+</script>
 
 </body>
 </html>
